@@ -40,7 +40,7 @@ The dangerous cases are rarely single API calls. They are sequences.
 What is included here:
 
 * A structured action request schema
-* A A baseline policy layer written in Rego (OPA)
+* A baseline policy layer written in Rego (OPA)
 * A small sequence replay harness for testing multi-step chains
 * A draft threat model
 
