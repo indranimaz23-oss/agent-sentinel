@@ -2,21 +2,19 @@
 
 ### Pre-Execution Enforcement Boundary for Tool-Using AI Agents
 
-Agent Sentinel is an experiment in building a hard execution boundary for autonomous AI systems that have tool access.
+Agent Sentinel is an experiment in building a pre-execution enforcement boundary for tool-using AI agents.
 
-If an agent wants to execute a real action, delete a bucket, rotate credentials, stop logging, destroy infrastructure, that request should pass through a deterministic enforcement layer before anything runs.
+If an agent wants to execute a real action in a live environment, that request should be evaluated deterministically before anything runs.
 
-This repository focuses on defining and testing that boundary.
+This repository defines and tests that boundary.
 
 ## The problem
 
-Most current agent "safety" mechanisms live in the system prompt. If the model is compromised (prompt injection), misconfigured, or simply wrong, that safety layer often fails with it.
+Most current agent safety mechanisms live in the system prompt. If the agent is injected, misconfigured, or simply wrong, that safety layer often fails with it.
 
-Post-hoc auditing is also insufficient once agents can act quickly and repeatedly. By the time something is flagged, the action has already executed.
+Auditing after the fact is not enough once agents can act quickly and repeatedly. The decision to allow or block an action has to happen before execution.
 
-If agents are allowed to operate in real environments, enforcement needs to happen before execution — not after.
-
-## The approach: pre-execution adjudication
+## The approach
 
 This project implements a firewall for actions.
 
@@ -32,18 +30,18 @@ This does not replace IAM. IAM defines static permissions. What this adds is a r
 
 ## Current scope
 
-The initial focus is on high-impact cloud actions and multi-step chains such as:
+The initial focus is destructive cloud operations and multi-step chains such as:
 
 * Infrastructure destroy → disable logging → delete principal
 * Data export → local staging → outbound network request
 
 The dangerous cases are rarely single API calls. They are sequences.
 
-This repository contains a minimal scaffold for:
+What is included here:
 
 * A structured action request schema
-* A deterministic policy layer (Rego/OPA baseline)
-* A sequence replay harness for adversarial testing
+* A A baseline policy layer written in Rego (OPA)
+* A small sequence replay harness for testing multi-step chains
 * A draft threat model
 
 The implementation is intentionally small and testable.
@@ -52,7 +50,7 @@ The implementation is intentionally small and testable.
 
 The baseline policy layer is written in Rego (OPA). Rego is widely used in cloud-native security and provides a clear, declarative way to express deterministic rules.
 
-It may ultimately prove heavier than necessary for simple agent schemas, but it is a useful starting point and benchmark. Early development will focus on measuring latency and operational overhead before committing to deeper integration.
+It may prove heavier than necessary for simple agent schemas. Latency and operational overhead will be measured before committing to deeper integration.
 
 The primary goal is not tool selection. It is defining a clean enforcement boundary that can be reasoned about, tested, and measured.
 
@@ -67,13 +65,12 @@ The primary goal is not tool selection. It is defining a clean enforcement bound
 ## Roadmap
 
 **Month 1**
-Finalize the action schema and benchmark Rego against lighter alternatives with attention to latency and maintainability.
+Finalize the schema and benchmark Rego for latency and maintainability.
 
 **Month 2**
-Build the sequence replay harness and stress-test policies against destructive chains and bypass attempts.
+Expand the sequence replay harness and test for policy gaps across chained actions.
 
 **Month 3**
-Tighten edge cases, document failure modes, and publish evaluation results alongside the reference implementation.
-
+Document failure modes and publish evaluation results alongside the reference implementation.
 
 
