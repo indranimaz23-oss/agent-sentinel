@@ -1,37 +1,79 @@
 # Agent Sentinel
-### Reference Implementation & Evaluation Harness
 
-Agent Sentinel is a security primitive designed to sit between autonomous AI agents and tool-execution environments (cloud APIs, internal tools, operator scripts).
+### Pre-Execution Enforcement Boundary for Tool-Using AI Agents
 
-**The goal:** move agent safety from probabilistic prompt-layer “guardrails” to a deterministic, pre-execution enforcement boundary.
+Agent Sentinel is an experiment in building a hard execution boundary for autonomous AI systems that have tool access.
+
+If an agent wants to execute a real action, delete a bucket, rotate credentials, stop logging, destroy infrastructure, that request should pass through a deterministic enforcement layer before anything runs.
+
+This repository focuses on defining and testing that boundary.
 
 ## The problem
-Most agent safety today relies on system prompts. If an agent is compromised (prompt injection) or simply wrong, the safety layer often fails with it. Post-hoc auditing is too slow for fast-acting agents that can execute many actions quickly.
 
-## The solution: pre-execution adjudication
-This project implements a “firewall for actions.” Before a tool call executes, it is evaluated against versioned, deterministic policies.
+Most current agent "safety" mechanisms live in the system prompt. If the model is compromised (prompt injection), misconfigured, or simply wrong, that safety layer often fails with it.
 
-Decisions:
-- **ALLOW**: action meets policy criteria
-- **BLOCK**: action violates a hard rule (e.g., “no destructive actions after hours”)
-- **HUMAN_REQUIRED**: action is sensitive and requires out-of-band approval
+Post-hoc auditing is also insufficient once agents can act quickly and repeatedly. By the time something is flagged, the action has already executed.
 
-## Components
-1. **Deterministic policy engine**
-   - evaluates structured action requests against Rego/OPA (or a small JSON-logic baseline)
-   - returns a decision + machine-readable reason
+If agents are allowed to operate in real environments, enforcement needs to happen before execution — not after.
 
-2. **Action-sequence evaluation harness**
-   - replays multi-step “destructive chains”
-   - measures missed blocks, false blocks, and policy bypass attempts
+## The approach: pre-execution adjudication
 
-## Repository layout
-- `schema/` — action request schema (the “what”)
-- `policies/` — baseline policies (the “how”)
-- `harness/` — adversarial sequences and replay cases (the “stress test”)
-- `docs/` — threat model and notes
+This project implements a firewall for actions.
+
+Before a tool call executes, it is evaluated against explicit, versioned policies and returns one of three decisions:
+
+* **ALLOW** — the action satisfies policy constraints
+* **BLOCK** — the action violates a hard rule
+* **HUMAN_REQUIRED** — the action is sensitive and requires an explicit override
+
+The system evaluates the structured action request itself, not the model’s reasoning about it.
+
+This does not replace IAM. IAM defines static permissions. What this adds is a runtime adjudication layer capable of applying contextual rules (time of day, environment, break-glass overrides, sequence constraints) before execution.
+
+## Current scope
+
+The initial focus is on high-impact cloud actions and multi-step chains such as:
+
+* Infrastructure destroy → disable logging → delete principal
+* Data export → local staging → outbound network request
+
+The dangerous cases are rarely single API calls. They are sequences.
+
+This repository contains a minimal scaffold for:
+
+* A structured action request schema
+* A deterministic policy layer (Rego/OPA baseline)
+* A sequence replay harness for adversarial testing
+* A draft threat model
+
+The implementation is intentionally small and testable.
+
+## Design notes
+
+The baseline policy layer is written in Rego (OPA). Rego is widely used in cloud-native security and provides a clear, declarative way to express deterministic rules.
+
+It may ultimately prove heavier than necessary for simple agent schemas, but it is a useful starting point and benchmark. Early development will focus on measuring latency and operational overhead before committing to deeper integration.
+
+The primary goal is not tool selection. It is defining a clean enforcement boundary that can be reasoned about, tested, and measured.
+
+## Repository structure
+
+* `schema/` — structured action request definition
+* `policies/` — baseline deterministic rules
+* `harness/` — adversarial sequence definitions
+* `docs/` — threat model and implementation notes
+
 
 ## Roadmap
-- **Month 1:** schema finalization + Rego vs JSON-logic benchmarking (latency + maintainability)
-- **Month 2:** sequence replay engine + adversarial scenario generation
-- **Month 3:** evaluation report + hardened reference implementation
+
+**Month 1**
+Finalize the action schema and benchmark Rego against lighter alternatives with attention to latency and maintainability.
+
+**Month 2**
+Build the sequence replay harness and stress-test policies against destructive chains and bypass attempts.
+
+**Month 3**
+Tighten edge cases, document failure modes, and publish evaluation results alongside the reference implementation.
+
+
+
