@@ -28,6 +28,8 @@ The system evaluates the structured action request itself, not the model’s rea
 
 This does not replace IAM. IAM defines static permissions. What this adds is a runtime adjudication layer capable of applying contextual rules (time of day, environment, break-glass overrides, sequence constraints) before execution.
 
+The initial prototype uses deterministic policies as a baseline layer, with future work exploring risk scoring and sequence-aware evaluation for multi-step agent actions.
+
 ## Current scope
 
 The initial focus is destructive cloud operations and multi-step chains such as:
