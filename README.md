@@ -40,7 +40,6 @@ action is executed.
 
 ![Agent Sentinel Workflow](docs/agent-sentinel-workflow.svg)
 
----
 
 ### 2. Enforcement Architecture
 
@@ -51,7 +50,6 @@ evaluated before execution.
 
 ![Enforcement Architecture](docs/agent-sentinel-enforcement.svg)
 
----
 
 
 ## Current scope
