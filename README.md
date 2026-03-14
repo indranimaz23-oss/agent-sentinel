@@ -45,10 +45,17 @@ action is executed.
 
 This diagram shows how Sentinel sits as a mandatory proxy 
 between the agent and cloud infrastructure. The agent has 
-no direct AWS credentials — all calls are intercepted and 
+no direct AWS credentials and all calls are intercepted and 
 evaluated before execution.
 
 ![Enforcement Architecture](docs/agent-sentinel-enforcement.svg)
+
+
+### 3. Decision Logic
+How Sentinel combines policy rules, risk scoring, and 
+sequence analysis into a final ALLOW / BLOCK / HUMAN REQUIRED decision.
+
+![Decision Logic](docs/agent-sentinel-decision-logic.svg)\
 
 
 
