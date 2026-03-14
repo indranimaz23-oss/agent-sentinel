@@ -1,0 +1,141 @@
+<svg width="680" viewBox="0 0 680 1020" xmlns="http://www.w3.org/2000/svg" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: white;">
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<text font-size="13" font-weight="500" x="340" y="22" text-anchor="middle" fill="#444441">Decision Logic: How Sentinel Reaches a Final Decision</text>
+
+<!-- Incoming Action Request -->
+<rect x="200" y="36" width="280" height="52" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="56" text-anchor="middle" dominant-baseline="central" fill="#0C447C">Incoming Action Request</text>
+<text font-size="12" x="340" y="74" text-anchor="middle" dominant-baseline="central" fill="#185FA5">agent_id · action · resource · environment</text>
+<line x1="340" y1="88" x2="340" y2="114" stroke="#185FA5" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+<!-- Step 1 -->
+<rect x="60" y="116" width="560" height="44" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="13" font-weight="500" x="200" y="138" dominant-baseline="central" fill="#3C3489">Step 1 — Hard Policy Check (Rego / OPA)</text>
+<text font-size="12" x="540" y="138" text-anchor="middle" dominant-baseline="central" fill="#534AB7">deterministic</text>
+<line x1="340" y1="160" x2="340" y2="186" stroke="#534AB7" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- Diamond -->
+<polygon points="340,188 420,218 340,248 260,218" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="12" font-weight="500" x="340" y="214" text-anchor="middle" dominant-baseline="central" fill="#3C3489">Hard block</text>
+<text font-size="12" x="340" y="230" text-anchor="middle" dominant-baseline="central" fill="#534AB7">rule matched?</text>
+
+<!-- YES branch -->
+<line x1="420" y1="218" x2="530" y2="218" stroke="#A32D2D" stroke-width="1.2" marker-end="url(#arrow)"/>
+<text font-size="11" x="472" y="210" text-anchor="middle" fill="#A32D2D">YES</text>
+<rect x="532" y="196" width="120" height="44" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+<text font-size="13" font-weight="500" x="592" y="218" text-anchor="middle" dominant-baseline="central" fill="#791F1F">BLOCK</text>
+<text font-size="11" x="592" y="248" text-anchor="middle" fill="#A32D2D">immediate — no</text>
+<text font-size="11" x="592" y="260" text-anchor="middle" fill="#A32D2D">further evaluation</text>
+
+<!-- NO branch -->
+<line x1="340" y1="248" x2="340" y2="278" stroke="#534AB7" stroke-width="1" marker-end="url(#arrow)"/>
+<text font-size="11" x="356" y="265" fill="#3B6D11">NO — continue</text>
+
+<!-- Step 2 -->
+<rect x="60" y="280" width="560" height="44" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="13" font-weight="500" x="200" y="302" dominant-baseline="central" fill="#3C3489">Step 2 — Risk Scoring Engine</text>
+<text font-size="12" x="540" y="302" text-anchor="middle" dominant-baseline="central" fill="#534AB7">weighted model</text>
+<line x1="340" y1="324" x2="340" y2="350" stroke="#534AB7" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- Risk factor boxes -->
+<rect x="60" y="352" width="120" height="72" rx="8" fill="#ffffff" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="12" font-weight="500" x="120" y="372" text-anchor="middle" dominant-baseline="central" fill="#3C3489">Action type</text>
+<text font-size="11" x="120" y="390" text-anchor="middle" fill="#534AB7">delete → 0.8</text>
+<text font-size="11" x="120" y="406" text-anchor="middle" fill="#534AB7">read → 0.1</text>
+
+<rect x="200" y="352" width="120" height="72" rx="8" fill="#ffffff" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="12" font-weight="500" x="260" y="372" text-anchor="middle" dominant-baseline="central" fill="#3C3489">Environment</text>
+<text font-size="11" x="260" y="390" text-anchor="middle" fill="#534AB7">prod → ×1.5</text>
+<text font-size="11" x="260" y="406" text-anchor="middle" fill="#534AB7">dev → ×0.5</text>
+
+<rect x="340" y="352" width="120" height="72" rx="8" fill="#ffffff" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="12" font-weight="500" x="400" y="372" text-anchor="middle" dominant-baseline="central" fill="#3C3489">Resource type</text>
+<text font-size="11" x="400" y="390" text-anchor="middle" fill="#534AB7">IAM → +0.3</text>
+<text font-size="11" x="400" y="406" text-anchor="middle" fill="#534AB7">S3 prod → +0.2</text>
+
+<rect x="480" y="352" width="160" height="72" rx="8" fill="#ffffff" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="12" font-weight="500" x="560" y="372" text-anchor="middle" dominant-baseline="central" fill="#3C3489">Break-glass flag</text>
+<text font-size="11" x="560" y="390" text-anchor="middle" fill="#534AB7">present → −0.4</text>
+<text font-size="11" x="560" y="406" text-anchor="middle" fill="#534AB7">absent → no change</text>
+
+<!-- Converge to risk score -->
+<path d="M120 424 L120 450 L340 450" fill="none" stroke="#534AB7" stroke-width="0.8" opacity="0.6"/>
+<path d="M260 424 L260 450" fill="none" stroke="#534AB7" stroke-width="0.8" opacity="0.6"/>
+<path d="M400 424 L400 450" fill="none" stroke="#534AB7" stroke-width="0.8" opacity="0.6"/>
+<path d="M560 424 L560 450 L340 450" fill="none" stroke="#534AB7" stroke-width="0.8" opacity="0.6"/>
+<line x1="340" y1="450" x2="340" y2="470" stroke="#534AB7" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+<rect x="220" y="472" width="240" height="44" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="13" font-weight="500" x="340" y="490" text-anchor="middle" dominant-baseline="central" fill="#3C3489">Composite Risk Score</text>
+<text font-size="12" x="340" y="508" text-anchor="middle" dominant-baseline="central" fill="#534AB7">0.0 (safe) → 1.0 (critical)</text>
+<line x1="340" y1="516" x2="340" y2="542" stroke="#534AB7" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- Step 3 -->
+<rect x="60" y="544" width="560" height="44" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="13" font-weight="500" x="200" y="566" dominant-baseline="central" fill="#3C3489">Step 3 — Sequence Analysis</text>
+<text font-size="12" x="540" y="566" text-anchor="middle" dominant-baseline="central" fill="#534AB7">context-aware</text>
+<line x1="340" y1="588" x2="340" y2="612" stroke="#534AB7" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- Sequence boxes -->
+<rect x="60" y="614" width="260" height="64" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text font-size="12" font-weight="500" x="190" y="632" text-anchor="middle" dominant-baseline="central" fill="#633806">Dangerous sequence detected</text>
+<text font-size="11" x="190" y="650" text-anchor="middle" fill="#854F0B">modify IAM → export data → delete logs</text>
+<text font-size="11" x="190" y="664" text-anchor="middle" fill="#854F0B">score escalated → +0.4 penalty</text>
+
+<rect x="360" y="614" width="260" height="64" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+<text font-size="12" font-weight="500" x="490" y="632" text-anchor="middle" dominant-baseline="central" fill="#27500A">Normal sequence</text>
+<text font-size="11" x="490" y="650" text-anchor="middle" fill="#3B6D11">read config → read logs → read status</text>
+<text font-size="11" x="490" y="664" text-anchor="middle" fill="#3B6D11">score unchanged</text>
+
+<line x1="340" y1="678" x2="340" y2="704" stroke="#534AB7" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- Step 4 -->
+<rect x="60" y="706" width="560" height="44" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="13" font-weight="500" x="200" y="728" dominant-baseline="central" fill="#3C3489">Step 4 — Final Threshold Decision</text>
+<text font-size="12" x="560" y="728" text-anchor="middle" dominant-baseline="central" fill="#534AB7">worst-case wins</text>
+<line x1="340" y1="750" x2="340" y2="776" stroke="#534AB7" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- Threshold bands -->
+<rect x="60" y="778" width="168" height="52" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+<text font-size="13" font-weight="500" x="144" y="796" text-anchor="middle" dominant-baseline="central" fill="#27500A">Score &lt; 0.4</text>
+<text font-size="12" x="144" y="816" text-anchor="middle" dominant-baseline="central" fill="#3B6D11">→ ALLOW</text>
+
+<rect x="256" y="778" width="168" height="52" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text font-size="13" font-weight="500" x="340" y="796" text-anchor="middle" dominant-baseline="central" fill="#633806">Score 0.4 – 0.75</text>
+<text font-size="12" x="340" y="816" text-anchor="middle" dominant-baseline="central" fill="#854F0B">→ HUMAN APPROVAL</text>
+
+<rect x="452" y="778" width="168" height="52" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+<text font-size="13" font-weight="500" x="536" y="796" text-anchor="middle" dominant-baseline="central" fill="#791F1F">Score &gt; 0.75</text>
+<text font-size="12" x="536" y="816" text-anchor="middle" dominant-baseline="central" fill="#A32D2D">→ BLOCK</text>
+
+<text font-size="11" x="144" y="848" text-anchor="middle" fill="#3B6D11">e.g. read S3 in dev</text>
+<text font-size="11" x="340" y="848" text-anchor="middle" fill="#854F0B">e.g. delete S3 in staging</text>
+<text font-size="11" x="536" y="848" text-anchor="middle" fill="#A32D2D">e.g. drop IAM in prod</text>
+
+<!-- Final outputs -->
+<line x1="144" y1="830" x2="144" y2="874" stroke="#3B6D11" stroke-width="1.2" marker-end="url(#arrow)"/>
+<line x1="340" y1="830" x2="340" y2="874" stroke="#854F0B" stroke-width="1.2" marker-end="url(#arrow)"/>
+<line x1="536" y1="830" x2="536" y2="874" stroke="#A32D2D" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+<rect x="60" y="876" width="168" height="44" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="144" y="898" text-anchor="middle" dominant-baseline="central" fill="#27500A">ALLOW</text>
+
+<rect x="256" y="876" width="168" height="44" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text font-size="13" font-weight="500" x="340" y="898" text-anchor="middle" dominant-baseline="central" fill="#633806">HUMAN REQUIRED</text>
+
+<rect x="452" y="876" width="168" height="44" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="536" y="898" text-anchor="middle" dominant-baseline="central" fill="#791F1F">BLOCK</text>
+
+<!-- Audit arrows -->
+<path d="M144 920 Q144 960 300 975" fill="none" stroke="#888780" stroke-width="0.8" marker-end="url(#arrow)" opacity="0.5"/>
+<path d="M340 920 L340 977" fill="none" stroke="#888780" stroke-width="0.8" marker-end="url(#arrow)" opacity="0.5"/>
+<path d="M536 920 Q536 960 400 975" fill="none" stroke="#888780" stroke-width="0.8" marker-end="url(#arrow)" opacity="0.5"/>
+
+<rect x="210" y="978" width="260" height="30" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text font-size="12" font-weight="500" x="340" y="993" text-anchor="middle" dominant-baseline="central" fill="#444441">Audit / Action Log — every decision recorded</text>
+</svg>
