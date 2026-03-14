@@ -55,7 +55,7 @@ evaluated before execution.
 How Sentinel combines policy rules, risk scoring, and 
 sequence analysis into a final ALLOW / BLOCK / HUMAN REQUIRED decision.
 
-![Decision Logic](docs/agent-sentinel-decision-logic.svg)\
+![Decision Logic](docs/agent-sentinel-decision-logic.svg)
 
 
 
