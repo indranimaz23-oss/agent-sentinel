@@ -32,6 +32,12 @@ The initial prototype uses deterministic policies as a baseline layer, with futu
 
 ## Architecture
 
+### 1. Human Policy and Agent Action Workflow
+
+This diagram shows how human safety instructions and AI agent 
+actions flow into Agent Sentinel before any infrastructure 
+action is executed.
+
 ![Agent Sentinel Workflow](docs/agent-sentinel-workflow.svg)
 
 ## Current scope
