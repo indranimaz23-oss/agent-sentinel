@@ -30,6 +30,10 @@ This does not replace IAM. IAM defines static permissions. What this adds is a r
 
 The initial prototype uses deterministic policies as a baseline layer, with future work exploring risk scoring and sequence-aware evaluation for multi-step agent actions.
 
+## Architecture
+
+![Agent Sentinel Workflow](docs/agent-sentinel-workflow.svg)
+
 ## Current scope
 
 The initial focus is destructive cloud operations and multi-step chains such as:
