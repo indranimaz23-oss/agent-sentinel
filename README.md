@@ -40,6 +40,20 @@ action is executed.
 
 ![Agent Sentinel Workflow](docs/agent-sentinel-workflow.svg)
 
+---
+
+### 2. Enforcement Architecture
+
+This diagram shows how Sentinel sits as a mandatory proxy 
+between the agent and cloud infrastructure. The agent has 
+no direct AWS credentials — all calls are intercepted and 
+evaluated before execution.
+
+![Enforcement Architecture](docs/agent-sentinel-enforcement.svg)
+
+---
+
+
 ## Current scope
 
 The initial focus is destructive cloud operations and multi-step chains such as:
