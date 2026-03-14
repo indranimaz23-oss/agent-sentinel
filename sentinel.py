@@ -231,47 +231,167 @@ def create_policy(policy: PolicyCreate):
 # Legacy: Evaluate Endpoint (uses legacy policies)
 # ---------------------------
 
-@app.post("/evaluate")
+# ---------------------------
+# Evaluation Response Model
+# ---------------------------
+
+class EvaluationResult(BaseModel):
+    decision: str
+    reason: str
+    risk_score: float
+    action_id: str
+    policy_id_matched: Optional[str] = None
+    timestamp: str
+
+
+def compute_risk_score(action: str, environment: str, resource_id: str) -> float:
+    score = 0.0
+
+    action_weights = {
+        "delete":    0.8,
+        "terminate": 0.8,
+        "destroy":   0.9,
+        "drop":      0.9,
+        "disable":   0.6,
+        "modify":    0.4,
+        "update":    0.3,
+        "create":    0.2,
+        "read":      0.1,
+        "list":      0.05,
+        "describe":  0.05,
+    }
+    action_lower = action.lower()
+    for keyword, weight in action_weights.items():
+        if keyword in action_lower:
+            score += weight
+            break
+    else:
+        score += 0.3
+
+    env_multipliers = {
+        "prod":       1.5,
+        "production": 1.5,
+        "staging":    1.0,
+        "dev":        0.5,
+        "sandbox":    0.4,
+    }
+    env_lower = environment.lower()
+    for env_key, mult in env_multipliers.items():
+        if env_key in env_lower:
+            score *= mult
+            break
+
+    sensitive_resources = ["iam", "kms", "cloudtrail", "prod", "database", "rds", "secret"]
+    resource_lower = resource_id.lower()
+    for sensitive in sensitive_resources:
+        if sensitive in resource_lower:
+            score += 0.2
+            break
+
+    return round(min(max(score, 0.0), 1.0), 2)
+
+
+def check_policy_v1_match(proposed: ProposedAction) -> Optional[str]:
+    try:
+        items = policies_v1_table.scan().get("Items", [])
+        for item in items:
+            if item.get("status") != "active":
+                continue
+            policy = item.get("policy", {})
+            effect = policy.get("effect", "ALLOW")
+            actions = policy.get("actions", [])
+            conditions = policy.get("conditions", [])
+
+            action_match = any(
+                proposed.action.lower() in a.lower() or a == "*"
+                for a in actions
+            )
+            if not action_match:
+                continue
+
+            env_match = True
+            for condition in conditions:
+                if condition.get("path") == "context.env":
+                    if condition.get("op") == "eq":
+                        if condition.get("value") not in [proposed.environment, "*"]:
+                            env_match = False
+            if not env_match:
+                continue
+
+            if effect == "BLOCK":
+                return item.get("policy_id")
+
+    except Exception:
+        pass
+    return None
+
+
+@app.post("/evaluate", response_model=EvaluationResult)
 def evaluate_action(proposed: ProposedAction):
     action_id = str(uuid.uuid4())
     current_hour = datetime.utcnow().hour
 
-    # 1) Check protection policies first (legacy scan)
-    policies = POLICIES_TABLE.scan().get("Items", [])
+    risk_score = compute_risk_score(
+        proposed.action,
+        proposed.environment,
+        proposed.resource_id
+    )
 
+    # 1) Check PolicyV1 table first
+    matched_policy_id = check_policy_v1_match(proposed)
+    if matched_policy_id:
+        decision = "BLOCK"
+        reason = f"Blocked by policy {matched_policy_id}"
+        log_action(action_id, proposed, decision, reason)
+        return EvaluationResult(
+            decision=decision,
+            reason=reason,
+            risk_score=risk_score,
+            action_id=action_id,
+            policy_id_matched=matched_policy_id,
+            timestamp=now_iso(),
+        )
+
+    # 2) Check legacy time-window policies
+    policies = POLICIES_TABLE.scan().get("Items", [])
     for policy in policies:
         if (
             policy.get("resource_id") == proposed.resource_id
             and policy.get("environment") == proposed.environment
-            and int(policy.get("start_hour")) <= current_hour <= int(policy.get("end_hour"))
+            and int(policy.get("start_hour", 0)) <= current_hour <= int(policy.get("end_hour", 0))
         ):
             decision = "BLOCK"
             reason = "Protected resource during restricted hours"
             log_action(action_id, proposed, decision, reason)
-            return {"decision": decision, "reason": reason}
+            return EvaluationResult(
+                decision=decision,
+                reason=reason,
+                risk_score=risk_score,
+                action_id=action_id,
+                policy_id_matched=policy.get("policy_id"),
+                timestamp=now_iso(),
+            )
 
-    # 2) Default allow (risk engine later)
-    decision = "ALLOW"
-    reason = "No matching protection policy"
-
-    # Invoke executor Lambda synchronously (dry-run true)
-    payload = {
-        "action_id": action_id,
-        "agent_id": proposed.agent_id,
-        "action": proposed.action,
-        "parameters": proposed.parameters,
-        "dry_run": True
-    }
-
-    lambda_client.invoke(
-        FunctionName="agentsentinel-executor",
-        InvocationType="RequestResponse",
-        Payload=json.dumps(payload).encode("utf-8")
-    )
+    # 3) Risk score threshold
+    if risk_score >= 0.75:
+        decision = "BLOCK"
+        reason = f"Risk score {risk_score} exceeds critical threshold (0.75)"
+    elif risk_score >= 0.4:
+        decision = "HUMAN_REQUIRED"
+        reason = f"Risk score {risk_score} requires human approval"
+    else:
+        decision = "ALLOW"
+        reason = "Action within acceptable risk parameters"
 
     log_action(action_id, proposed, decision, reason)
-    return {"decision": decision, "reason": reason}
-
+    return EvaluationResult(
+        decision=decision,
+        reason=reason,
+        risk_score=risk_score,
+        action_id=action_id,
+        policy_id_matched=None,
+        timestamp=now_iso(),
+    )
 
 def log_action(action_id: str, proposed: ProposedAction, decision: str, reason: str):
     ACTIONLOG_TABLE.put_item(
